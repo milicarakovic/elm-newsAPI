@@ -1,25 +1,19 @@
 module Main exposing (..)
 
-import Browser
-import Html exposing (Html, text)
-import Route exposing (Route)
-import Url exposing (Url)
+import Browser exposing (Document, UrlRequest)
 import Browser.Navigation as Nav
-import Browser exposing (Document)
-import Html exposing (h3)
-
+import Http
+import Html exposing (Html, text, h3)
+import Route exposing (Route)
+import RemoteData exposing (WebData)
+import Url exposing (Url)
 import Pages.HomePage as HomePage
+import Pages.MyNewsPage as MyNewsPage
 import Pages.NewsPage as NewsPage
 import Model.News exposing (..)
-import Browser exposing (UrlRequest)
 import Json.Decode as Decode exposing (decodeValue, decodeString, Value)
-import Model.News exposing (News)
-import Http
-import RemoteData exposing (WebData)
 
 ---- MODEL ----
-
-
 type alias Model =
     { route: Route
     , page : Page
@@ -30,6 +24,7 @@ type Page
     = NotFoundPage
     | HomePage
     | NewsPage NewsPage.Model
+    | MyNewsPage MyNewsPage.Model
 
 
 init : Value -> Url -> Nav.Key -> ( Model, Cmd Msg )
@@ -78,6 +73,13 @@ initCurrentPage  news ( model, existingCmds ) =
                                 NewsPage.init news
                         in
                         ( NewsPage pageModel, Cmd.map NewsPageMsg pageCmds )
+                    
+                    Route.MyNewsPage ->
+                        let
+                            (pageModel, pageCmds) =
+                                MyNewsPage.init news
+                        in
+                        ( MyNewsPage pageModel, Cmd.map MyNewsPageMsg pageCmds )
         in
 
     ( { model | page = currentPage }
@@ -92,6 +94,7 @@ type Msg
     = LinkClicked UrlRequest
     | UrlChanged Url
     | NewsPageMsg NewsPage.Msg
+    | MyNewsPageMsg MyNewsPage.Msg
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -105,6 +108,15 @@ update msg model =
             ( { model | page = NewsPage updatedPageModel }
             , Cmd.map NewsPageMsg updatedCmd
             )
+        
+        ( MyNewsPageMsg subMsg, MyNewsPage pageModel ) ->
+            let
+                ( updatedPageModel, updatedCmd ) =
+                    MyNewsPage.update subMsg pageModel
+            in
+            ( { model | page = MyNewsPage updatedPageModel }
+            , Cmd.map MyNewsPageMsg updatedCmd
+            )       
 
         ( LinkClicked urlRequest, _ ) ->
             case urlRequest of
@@ -132,11 +144,9 @@ update msg model =
 
 
 ---- VIEW ----
-
-
 view : Model -> Document Msg
 view model =
-    {title = "News App"
+    { title = "News App"
     , body = [currentView model]
     }
 
@@ -152,6 +162,10 @@ currentView model =
         NewsPage pageModel ->
             NewsPage.view pageModel
                 |> Html.map NewsPageMsg
+        
+        MyNewsPage pageModel ->
+            MyNewsPage.view pageModel
+                |> Html.map MyNewsPageMsg
 
 notFoundView : Html msg
 notFoundView =
@@ -159,8 +173,6 @@ notFoundView =
 
 
 ---- PROGRAM ----
-
-
 main : Program Value Model Msg
 main =
     Browser.application

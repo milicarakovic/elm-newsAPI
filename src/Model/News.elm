@@ -1,9 +1,9 @@
 module Model.News exposing (..)
 
-import Json.Decode as Decode exposing (Decoder, int, list, string)
-import Json.Decode.Pipeline exposing (optionalAt, required, requiredAt)
+import Json.Decode as Decode exposing (Decoder, list, string)
+import Json.Decode.Pipeline exposing (optional, required)
 import Json.Encode as Encode
-import Json.Decode.Pipeline exposing (optional)
+
 type alias Source =
     { id: String
     , name : String
@@ -42,6 +42,10 @@ newsDecoder =
     Decode.succeed identity
         |> required "articles" (list oneNewsDecoder)
 
+myNewsDecoder : Decoder (List News)
+myNewsDecoder =
+    list oneNewsDecoder
+
 oneNewsDecoder : Decoder News
 oneNewsDecoder =
     Decode.succeed News
@@ -58,6 +62,22 @@ sourceDecoder =
     Decode.succeed Source
         |> optional "id" string ""
         |> required "name" string
-    -- Decode.map2 Source
-    --     (Decode.field "id" Decode.string (null ""))
-    --     (Decode.field "name" Decode.string)
+
+oneNewsEncoder : News -> Encode.Value
+oneNewsEncoder news =
+    Encode.object
+        [ ( "source", sourceEncoder news.source)
+        , ( "author", Encode.string news.author)
+        , ( "title", Encode.string news.title)
+        , ( "description", Encode.string news.description)
+        , ( "url", Encode.string news.url)
+        , ( "urlToImage", Encode.string news.urlToImage)
+        , ( "content", Encode.string news.content)
+        ]
+
+sourceEncoder : Source -> Encode.Value
+sourceEncoder source =
+    Encode.object
+        [ ( "id", Encode.string source.id)
+        , ( "name", Encode.string source.name)
+        ]

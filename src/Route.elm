@@ -7,6 +7,7 @@ type Route
     = NotFound
     | HomePage
     | NewsPage
+    | MyNewsPage
 
 parseUrl : Url -> Route
 parseUrl url =
@@ -22,5 +23,6 @@ matchRoute =
     oneOf
         [ map HomePage top
         , map NewsPage (s "newsPage")
+        , map MyNewsPage (s "myNewsPage")
         ]
 
